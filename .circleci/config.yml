@@ -16,5 +16,5 @@ jobs:
       - run: |
           TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
           docker build -t quay.io/luke_mallon/pingdom-operator:$TAG .
-          docker login -u $QUAY_USER -p $QUAY_PASS
+          docker login -u $QUAY_USER -p $QUAY_PASS quay.io
           docker push quay.io/luke_mallon/pingdom-operator:$TAG
