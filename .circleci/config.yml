@@ -12,6 +12,7 @@ jobs:
       - run: go get -v -t -d ./...
       - run: go test -v ./...
       - run: go build -o pingdom-operator
+      - setup_remote_docker
       - run: |
           TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
           docker build -t quay.io/luke_mallon/pingdom-operator:$TAG .
