@@ -12,8 +12,7 @@ jobs:
       - run: go get -v -t -d ./...
       - run: go test -v ./...
       - run: go build -o pingdom-operator
-      - setup_remote_docker:
-        docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: Install Docker client
           command: |
