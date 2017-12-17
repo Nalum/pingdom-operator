@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pingdom-operator
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: pingdom-operator
+    spec:
+      containers:
+      - name: pingdom-operator
+        image:
+        command:
+        - pingdom-operator
+        env:
+        - name: PINGDOM_USER
+          valueFrom:
+            secretKeyRef:
+              name: pingdom-operator
+              key: user-name
+        - name: PINGDOM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pingdom-operator
+              key: password
+        - name: PINGDOM_APP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: pingdom-operator
+              key: application-key
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
