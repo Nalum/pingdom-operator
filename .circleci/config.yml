@@ -10,7 +10,7 @@ jobs:
     steps:
       - checkout
       - run: ./hack/verify-codegen.sh
-      - run: go test -v ./...
+      - run: go test -v --cover pkg/pingdom
       - run: go build -o pingdom-operator
       - setup_remote_docker
       - run: |
