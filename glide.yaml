@@ -1,8 +1,9 @@
 package: github.com/nalum/pingdom-operator
 import:
+- package: golang.org/x/tools
 - package: k8s.io/client-go
   version: v6.0.0
 - package: k8s.io/kubernetes
 - package: k8s.io/code-generator
 - package: k8s.io/gengo
-- package: golang.org/x/tools
+- package: k8s.io/sample-controller

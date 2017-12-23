@@ -1,53 +1,58 @@
 package main
 
 import (
-	"log"
-	"os"
+	"flag"
+	"time"
 
-	"github.com/nalum/pingdom-operator/pkg/pingdom"
-	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/golang/glog"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
+	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+
+	clientset "github.com/nalum/pingdom-operator/pkg/client/clientset/versioned"
+	informers "github.com/nalum/pingdom-operator/pkg/client/informers/externalversions"
+	"k8s.io/sample-controller/pkg/signals"
+)
+
+var (
+	masterURL  string
+	kubeconfig string
 )
 
 func main() {
-	k8sConfig, err := rest.InClusterConfig()
+	flag.Parse()
 
+	// set up signals so we handle the first shutdown signal gracefully
+	stopCh := signals.SetupSignalHandler()
+
+	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		glog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 
-	k8sClient, err := kubernetes.NewForConfig(k8sConfig)
-
+	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		log.Println(err)
-		os.Exit(2)
+		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	r := k8sClient.ExtensionsV1beta1()
-	rc := r.RESTClient()
-	rcg := rc.Get()
-	rcg.Name("pingdom.luke.mallon.io")
-	rcg.
-
-	crd := extensionsobj.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pingdom.luke.mallon.io",
-		},
-	}
-
-	client := pingdom.NewClient()
-	httpCheck, err := pingdom.NewHTTPCheck("Testing", "https://google.ie")
-
+	pingdomCheckclientset, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		log.Println(err)
+		glog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	err = client.CreateCheck(httpCheck)
+	pingdomCheckInformerFactory := informers.NewSharedInformerFactory(pingdomCheckclientset, time.Second*30)
 
-	if err != nil {
-		log.Println(err)
+	controller := NewController(kubeClient, pingdomCheckclientset, pingdomCheckInformerFactory)
+
+	go pingdomCheckInformerFactory.Start(stopCh)
+
+	if err = controller.Run(2, stopCh); err != nil {
+		glog.Fatalf("Error running controller: %s", err.Error())
 	}
+}
+
+func init() {
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 }
