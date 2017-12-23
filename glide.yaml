@@ -5,3 +5,4 @@ import:
 - package: k8s.io/kubernetes
 - package: k8s.io/code-generator
 - package: k8s.io/gengo
+- package: golang.org/x/tools

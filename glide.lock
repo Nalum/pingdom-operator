@@ -1,5 +1,5 @@
-hash: 6c1a8845a2953ab14a8c23ac54b43b0ba1d1b92dd888a537cd66b3cf60d84b7f
-updated: 2017-12-23T21:14:50.842181488Z
+hash: a847016a06c30e23c009561bbc8443c016e7feced88963a2e54cb72d87af7df8
+updated: 2017-12-23T21:33:03.825300341Z
 imports:
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
@@ -99,6 +99,8 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: golang.org/x/tools
+  version: ae8cc594552814363a7aeeb4f2825515a771fa38
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
