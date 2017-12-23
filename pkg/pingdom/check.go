@@ -3,6 +3,7 @@ package pingdom
 // Check allows us to work with multiple structs when working with the Pingdom API
 type Check interface {
 	GetType() string
+	getAPI() string
 	SetData(map[string]interface{}) error
 }
 

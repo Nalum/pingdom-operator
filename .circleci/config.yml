@@ -9,7 +9,7 @@ jobs:
     working_directory: /go/src/github.com/nalum/pingdom-operator
     steps:
       - checkout
-      - run: go get -v -t -d ./...
+      - run: ./hack/verify-codegen.sh
       - run: go test -v ./...
       - run: go build -o pingdom-operator
       - setup_remote_docker

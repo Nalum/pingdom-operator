@@ -62,3 +62,7 @@ func NewHTTPCheck(name, endpoint string) (Check, error) {
 func (hc *httpCheck) SetData(data map[string]interface{}) error {
 	return nil
 }
+
+func (hc *httpCheck) getAPI() string {
+	return APIv21Checks
+}
