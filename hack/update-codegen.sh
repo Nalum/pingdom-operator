@@ -27,8 +27,9 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${SCRIPT_ROOT}; ls -d -1 ./vendor/k8s.io/code-ge
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/nalum/pingdom-operator/pkg/client github.com/nalum/pingdom-operator/pkg/apis \
-  pingdomcheck:v1alpha1 #\
-#  --output-base "$(dirname ${BASH_SOURCE})/../../.."
+  pingdomcheck:v1alpha1 \
+  --output-base "$(dirname ${BASH_SOURCE})/../../.." \
+  --go-header-file ${SCRIPT_ROOT}/hack/custom-boilerplate.go.txt
 
 # To use your own boilerplate text append:
 #   --go-header-file ${SCRIPT_ROOT}/hack/custom-boilerplate.go.txt
