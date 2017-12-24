@@ -2,6 +2,7 @@ package pingdom
 
 const (
 	pingdomBaseAPI = "https://api.pingdom.com"
+	pingdomAppKey  = "" // TODO: fill this in
 )
 
 // This const block defines all the Check types that are supported by the Pingdom API
