@@ -35,13 +35,13 @@ const (
 
 	// MessageResourceExists is the message used for Events when a resource
 	// fails to sync due to a Deployment already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by Foo"
-	// MessageResourceSynced is the message used for an Event fired when a Foo
+	MessageResourceExists = "Resource %q already exists and is not managed by HTTPCheck"
+	// MessageResourceSynced is the message used for an Event fired when a HTTPCheck
 	// is synced successfully
-	MessageResourceSynced = "Foo synced successfully"
+	MessageResourceSynced = "HTTPCheck synced successfully"
 )
 
-// Controller is the controller implementation for Foo resources
+// Controller is the controller implementation for HTTPCheck resources
 type Controller struct {
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
@@ -68,7 +68,7 @@ func NewController(
 	pingdomCheckclientset clientset.Interface,
 	pingdomCheckInformerFactory informers.SharedInformerFactory) *Controller {
 
-	// obtain references to shared index informers for the Deployment and Foo
+	// obtain references to shared index informers for the Deployment and HTTPCheck
 	// types.
 	pingdomCheckInformer := pingdomCheckInformerFactory.Pingdomcheck().V1alpha1().HTTPChecks()
 
@@ -92,7 +92,7 @@ func NewController(
 	}
 
 	glog.Info("Setting up event handlers")
-	// Set up an event handler for when Foo resources change
+	// Set up an event handler for when HTTPCheck resources change
 	pingdomCheckInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueHTTPCheck,
 		UpdateFunc: func(old, new interface{}) {
@@ -121,7 +121,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	glog.Info("Starting workers")
-	// Launch two workers to process Foo resources
+	// Launch two workers to process HTTPCheck resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
@@ -177,7 +177,7 @@ func (c *Controller) processNextWorkItem() bool {
 		}
 
 		// Run the syncHandler, passing it the namespace/name string of the
-		// Foo resource to be synced.
+		// HTTPCheck resource to be synced.
 		if err := c.syncHandler(key); err != nil {
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
@@ -252,7 +252,7 @@ func (c *Controller) updateHTTPCheckStatus(check *pingdomCheckV1Alpha1.HTTPCheck
 	checkCopy := check.DeepCopy()
 	checkCopy.Status.PingdomStatus = SuccessSynced
 	// Until #38113 is merged, we must use Update instead of UpdateStatus to
-	// update the Status block of the Foo resource. UpdateStatus will not
+	// update the Status block of the HTTPCheck resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
 	_, err := c.pingdomCheckClientSet.Pingdomcheck().HTTPChecks(check.Namespace).Update(checkCopy)
@@ -304,7 +304,7 @@ func (c *Controller) handleObject(obj interface{}) {
 	glog.V(4).Infof("Processing object: %s", object.GetName())
 
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a Foo, we should not do anything more
+		// If this object is not owned by a HTTPCheck, we should not do anything more
 		// with it.
 		if ownerRef.Kind != "HTTPCheck" {
 			return
