@@ -16,12 +16,18 @@ import (
 )
 
 var (
-	masterURL  string
-	kubeconfig string
+	masterURL   string
+	kubeconfig  string
+	pingdomUser string
+	pingdomPass string
 )
 
 func main() {
 	flag.Parse()
+
+	if pingdomPass == "" || pingdomUser == "" {
+		glog.Exitln("You must provide the user details so that we can authenticate against the Pingdom API.")
+	}
 
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := signals.SetupSignalHandler()
@@ -55,4 +61,6 @@ func main() {
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&pingdomUser, "pingdom-user", "", "The user used to authenticate against the Pingdom API. Required")
+	flag.StringVar(&pingdomPass, "pingdom-password", "", "The password used to authenticate against the Pingdom API. Required")
 }
