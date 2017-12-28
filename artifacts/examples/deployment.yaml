@@ -11,9 +11,10 @@ spec:
     spec:
       containers:
       - name: pingdom-operator
-        image:
-        command:
-        - pingdom-operator
+        image: quay.io/nalum/pingdom-operator:master
+        args:
+        - -pingdom-user=$PINGDOM_USER
+        - -pingdom-password=$PINGDOM_PASSWORD
         env:
         - name: PINGDOM_USER
           valueFrom:
@@ -25,11 +26,6 @@ spec:
             secretKeyRef:
               name: pingdom-operator
               key: password
-        - name: PINGDOM_APP_KEY
-          valueFrom:
-            secretKeyRef:
-              name: pingdom-operator
-              key: application-key
         - name: MY_POD_NAMESPACE
           valueFrom:
             fieldRef:
