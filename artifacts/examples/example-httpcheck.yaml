@@ -1,0 +1,7 @@
+apiVersion: httpchecks.pingdom.mallon.io/v1alpha1
+kind: HTTPCheck
+metadata:
+  name: giantswarm.io
+spec:
+  name: giantswarm.io-check
+  url: https://giantswarm.io

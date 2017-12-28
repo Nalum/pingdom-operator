@@ -1,11 +1,11 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: httpchecks.pingdomcheck.mallon.io
+  name: httpchecks.pingdom.mallon.io
 spec:
-  group: pingdomcheck.mallon.io
+  group: pingdom.mallon.io
   version: v1alpha1
   scope: Namespaced
   names:
     kind: HTTPCheck
-    plural: HTTPChecks
+    plural: httpchecks
