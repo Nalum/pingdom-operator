@@ -1,4 +1,4 @@
-package pingdom
+package pingdomclient
 
 const (
 	pingdomBaseAPI = "https://api.pingdom.com"

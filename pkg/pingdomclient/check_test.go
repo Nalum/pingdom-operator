@@ -1,4 +1,4 @@
-package pingdom
+package pingdomclient
 
 import "testing"
 

@@ -5,11 +5,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	pingdomcheck "github.com/nalum/pingdom-operator/pkg/apis/pingdomcheck"
+	pingdom "github.com/nalum/pingdom-operator/pkg/apis/pingdom"
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: pingdomcheck.GroupName, Version: "v1alpha1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: pingdom.GroupName, Version: "v1alpha1"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {

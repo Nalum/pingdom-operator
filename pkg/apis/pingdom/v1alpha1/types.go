@@ -17,13 +17,13 @@ type HTTPCheck struct {
 	Status HTTPCheckStatus `json:"status"`
 }
 
-// HTTPCheckSpec is the spec for a Foo resource
+// HTTPCheckSpec is the spec for a HTTPCheck resource
 type HTTPCheckSpec struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
 
-// HTTPCheckStatus is the status for a Foo resource
+// HTTPCheckStatus is the status for a HTTPCheck resource
 type HTTPCheckStatus struct {
 	PingdomStatus string `json:"pingdomStatus"`
 }
