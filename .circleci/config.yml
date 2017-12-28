@@ -7,13 +7,11 @@ jobs:
     docker:
       - image: circleci/golang:1.8
     working_directory: /go/src/github.com/nalum/pingdom-operator
-    environment:
-    - CGO_ENABLED: "0"
     steps:
       - checkout
       - run: ./hack/verify-codegen.sh
       - run: go test -v --cover github.com/nalum/pingdom-operator/pkg/pingdom
-      - run: go build -o pingdom-operator
+      - run: CGO_ENABLED=0 go build -o pingdom-operator
       - setup_remote_docker
       - run: |
           TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
