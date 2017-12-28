@@ -1,0 +1,5 @@
+vendor/*
+kubernetes/*
+pkg/*
+hack/*
+.circleci/*
