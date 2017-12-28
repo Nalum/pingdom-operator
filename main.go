@@ -12,6 +12,7 @@ import (
 
 	clientset "github.com/nalum/pingdom-operator/pkg/client/clientset/versioned"
 	informers "github.com/nalum/pingdom-operator/pkg/client/informers/externalversions"
+	"github.com/nalum/pingdom-operator/pkg/pingdomclient"
 	"k8s.io/sample-controller/pkg/signals"
 )
 
@@ -29,6 +30,8 @@ func main() {
 		glog.Exitln("You must provide the user details so that we can authenticate against the Pingdom API.")
 	}
 
+	pingdomAPIClient := pingdomclient.NewClient(pingdomUser, pingdomPass)
+
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := signals.SetupSignalHandler()
 
@@ -42,16 +45,16 @@ func main() {
 		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	pingdomCheckclientset, err := clientset.NewForConfig(cfg)
+	pingdomclientset, err := clientset.NewForConfig(cfg)
 	if err != nil {
 		glog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	pingdomCheckInformerFactory := informers.NewSharedInformerFactory(pingdomCheckclientset, time.Second*30)
+	pingdomInformerFactory := informers.NewSharedInformerFactory(pingdomclientset, time.Second*30)
 
-	controller := NewController(kubeClient, pingdomCheckclientset, pingdomCheckInformerFactory)
+	controller := NewController(kubeClient, pingdomAPIClient, pingdomclientset, pingdomInformerFactory)
 
-	go pingdomCheckInformerFactory.Start(stopCh)
+	go pingdomInformerFactory.Start(stopCh)
 
 	if err = controller.Run(2, stopCh); err != nil {
 		glog.Fatalf("Error running controller: %s", err.Error())

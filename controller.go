@@ -17,20 +17,21 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	pingdomCheckV1Alpha1 "github.com/nalum/pingdom-operator/pkg/apis/pingdomcheck/v1alpha1"
+	pingdomV1Alpha1 "github.com/nalum/pingdom-operator/pkg/apis/pingdom/v1alpha1"
 	clientset "github.com/nalum/pingdom-operator/pkg/client/clientset/versioned"
-	pingdomCheckScheme "github.com/nalum/pingdom-operator/pkg/client/clientset/versioned/scheme"
+	pingdomScheme "github.com/nalum/pingdom-operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/nalum/pingdom-operator/pkg/client/informers/externalversions"
-	listers "github.com/nalum/pingdom-operator/pkg/client/listers/pingdomcheck/v1alpha1"
+	listers "github.com/nalum/pingdom-operator/pkg/client/listers/pingdom/v1alpha1"
+	"github.com/nalum/pingdom-operator/pkg/pingdomclient"
 )
 
-const controllerAgentName = "pingdomcheck-controller"
+const controllerAgentName = "pingdom-controller"
 
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a PingdomCheck is synced
+	// SuccessSynced is used as part of the Event 'reason' when a Resource is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a PingdomCheck fails
-	// to sync due to an already existing PingdomCheck
+	// ErrResourceExists is used as part of the Event 'reason' when a Resource fails
+	// to sync due to an already existing Pingdom Resource
 	ErrResourceExists = "ErrResourceExists"
 
 	// MessageResourceExists is the message used for Events when a resource
@@ -45,11 +46,11 @@ const (
 type Controller struct {
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
-	// pingdomCheckClientSet is a clientset for our own API group
-	pingdomCheckClientSet clientset.Interface
+	// pingdomClientSet is a clientset for our own API group
+	pingdomClientSet clientset.Interface
 
-	pingdomCheckLister  listers.HTTPCheckLister
-	pingdomChecksSynced cache.InformerSynced
+	pingdomLister  listers.HTTPCheckLister
+	pingdomsSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -60,22 +61,26 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+	// pingdomAPIClient is a client that will manage checks in the Pingdom API based
+	// on the CRDs on the Kubernetes cluster
+	pingdomAPIClient pingdomclient.Client
 }
 
 // NewController returns a new sample controller
 func NewController(
 	kubeclientset kubernetes.Interface,
-	pingdomCheckclientset clientset.Interface,
-	pingdomCheckInformerFactory informers.SharedInformerFactory) *Controller {
+	pingdomAPIClient *pingdomclient.Client,
+	pingdomclientset clientset.Interface,
+	pingdomInformerFactory informers.SharedInformerFactory) *Controller {
 
 	// obtain references to shared index informers for the Deployment and HTTPCheck
 	// types.
-	pingdomCheckInformer := pingdomCheckInformerFactory.Pingdomcheck().V1alpha1().HTTPChecks()
+	pingdomInformer := pingdomInformerFactory.Pingdom().V1alpha1().HTTPChecks()
 
 	// Create event broadcaster
 	// Add sample-controller types to the default Kubernetes Scheme so Events can be
 	// logged for sample-controller types.
-	pingdomCheckScheme.AddToScheme(scheme.Scheme)
+	pingdomScheme.AddToScheme(scheme.Scheme)
 	glog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
@@ -83,17 +88,17 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeClientSet:         kubeclientset,
-		pingdomCheckClientSet: pingdomCheckclientset,
-		pingdomCheckLister:    pingdomCheckInformer.Lister(),
-		pingdomChecksSynced:   pingdomCheckInformer.Informer().HasSynced,
-		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "PingdomChecks"),
-		recorder:              recorder,
+		kubeClientSet:    kubeclientset,
+		pingdomClientSet: pingdomclientset,
+		pingdomLister:    pingdomInformer.Lister(),
+		pingdomsSynced:   pingdomInformer.Informer().HasSynced,
+		workqueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Pingdom Resources"),
+		recorder:         recorder,
 	}
 
 	glog.Info("Setting up event handlers")
 	// Set up an event handler for when HTTPCheck resources change
-	pingdomCheckInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	pingdomInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueHTTPCheck,
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueHTTPCheck(new)
@@ -112,11 +117,11 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting PingdomCheck controller")
+	glog.Info("Starting Pingdom Resource controller")
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.pingdomChecksSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.pingdomsSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -210,7 +215,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Get the HTTPCheck resource with this namespace/name
-	check, err := c.pingdomCheckLister.HTTPChecks(namespace).Get(name)
+	check, err := c.pingdomLister.HTTPChecks(namespace).Get(name)
 
 	if err != nil {
 		// The HTTPCheck resource may no longer exist, in which case we stop
@@ -245,7 +250,7 @@ func (c *Controller) syncHandler(key string) error {
 }
 
 // TODO: Add second param based on response from Pingdom API
-func (c *Controller) updateHTTPCheckStatus(check *pingdomCheckV1Alpha1.HTTPCheck) error {
+func (c *Controller) updateHTTPCheckStatus(check *pingdomV1Alpha1.HTTPCheck) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -255,7 +260,7 @@ func (c *Controller) updateHTTPCheckStatus(check *pingdomCheckV1Alpha1.HTTPCheck
 	// update the Status block of the HTTPCheck resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
-	_, err := c.pingdomCheckClientSet.Pingdomcheck().HTTPChecks(check.Namespace).Update(checkCopy)
+	_, err := c.pingdomClientSet.Pingdom().HTTPChecks(check.Namespace).Update(checkCopy)
 	return err
 }
 
@@ -310,7 +315,7 @@ func (c *Controller) handleObject(obj interface{}) {
 			return
 		}
 
-		check, err := c.pingdomCheckLister.HTTPChecks(object.GetNamespace()).Get(ownerRef.Name)
+		check, err := c.pingdomLister.HTTPChecks(object.GetNamespace()).Get(ownerRef.Name)
 
 		if err != nil {
 			glog.V(4).Infof("ignoring orphaned object '%s' of check '%s'", object.GetSelfLink(), ownerRef.Name)
