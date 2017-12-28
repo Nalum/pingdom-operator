@@ -5,7 +5,7 @@ metadata:
 spec:
   group: pingdom.mallon.io
   version: v1alpha1
-  scope: Namespaced
+  scope: Cluster
   names:
     kind: HTTPCheck
     plural: httpchecks

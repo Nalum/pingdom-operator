@@ -10,7 +10,7 @@ jobs:
     steps:
       - checkout
       - run: ./hack/verify-codegen.sh
-      - run: go test -v --cover github.com/nalum/pingdom-operator/pkg/pingdom
+      - run: go test -v --cover github.com/nalum/pingdom-operator/pkg/pingdomclient
       - run: CGO_ENABLED=0 go build -o pingdom-operator
       - setup_remote_docker
       - run: |
