@@ -11,7 +11,7 @@ func TestCreateCheck(t *testing.T) {
 		t.Logf("Request received on: %s", r.RequestURI)
 		w.WriteHeader(http.StatusOK)
 	}))
-	client := NewClient()
+	client := NewClient("testing", "tester")
 	client.setBaseURL(httpServer.URL)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 
@@ -32,7 +32,7 @@ func TestCreateCheckFail(t *testing.T) {
 		t.Logf("Request received on: %s", r.RequestURI)
 		w.WriteHeader(http.StatusAccepted)
 	}))
-	client := NewClient()
+	client := NewClient("testing", "tester")
 	client.setBaseURL(httpServer.URL)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 
@@ -53,7 +53,7 @@ func TestUpdateCheck(t *testing.T) {
 		t.Logf("Request received on: %s", r.RequestURI)
 		w.WriteHeader(http.StatusOK)
 	}))
-	client := NewClient()
+	client := NewClient("testing", "tester")
 	client.setBaseURL(httpServer.URL)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 
@@ -74,7 +74,7 @@ func TestDeleteCheck(t *testing.T) {
 		t.Logf("Request received on: %s", r.RequestURI)
 		w.WriteHeader(http.StatusOK)
 	}))
-	client := NewClient()
+	client := NewClient("testing", "tester")
 	client.setBaseURL(httpServer.URL)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 
@@ -94,7 +94,7 @@ func TestSetBaseURL(t *testing.T) {
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	client := NewClient()
+	client := NewClient("testing", "tester")
 
 	if client.apiBase != pingdomBaseAPI {
 		t.Error()
