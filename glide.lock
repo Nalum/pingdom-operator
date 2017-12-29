@@ -1,5 +1,5 @@
-hash: c52882b07530d48e3ddad363da76800fd77b22a42747db25fca2bda27998c7bc
-updated: 2017-12-28T23:34:35.314718734Z
+hash: 71301543b31f338d58d08b27179d8f7bf8e2b93fec00da3593241b4ca8c5227a
+updated: 2017-12-29T16:59:38.453424512Z
 imports:
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
@@ -40,6 +40,10 @@ imports:
   - ptypes/timestamp
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
+- name: github.com/google/go-querystring
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+  subpackages:
+  - query
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/googleapis/gnostic
@@ -257,7 +261,7 @@ imports:
   - pkg/common
   - pkg/util/proto
 - name: k8s.io/kubernetes
-  version: 206ba3baca5faadb13f5c0861638de0939dcc179
+  version: 5bd0d98d355df983090f888f5c4a81774924b0cb
 - name: k8s.io/sample-controller
   version: 5562881cd118bbf2318c74583fb75f10b0ab4b31
   subpackages:

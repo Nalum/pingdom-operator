@@ -7,3 +7,4 @@ import:
 - package: k8s.io/code-generator
 - package: k8s.io/gengo
 - package: k8s.io/sample-controller
+- package: github.com/google/go-querystring/query
