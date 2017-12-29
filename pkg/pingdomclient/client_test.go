@@ -32,12 +32,19 @@ func (t RewriteTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func TestMain(m *testing.M) {
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request received on: %s", r.RequestURI)
-		jsonBody := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(&jsonBody)
+		log.Printf("%s Request received on: %s%s", r.Method, r.Host, r.RequestURI)
 
-		if jsonBody["name"] == "accepted" {
-			w.WriteHeader(http.StatusAccepted)
+		if r.Method != http.MethodDelete {
+			jsonBody := map[string]interface{}{}
+			json.NewDecoder(r.Body).Decode(&jsonBody)
+
+			if jsonBody["name"] == "accepted" {
+				w.WriteHeader(http.StatusAccepted)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
+
+			w.Write([]byte(`{"check": {"id": 123, "name": "` + jsonBody["name"].(string) + `"}}`))
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
@@ -70,6 +77,10 @@ func TestCreateCheck(t *testing.T) {
 		t.Fail()
 		t.Error(err)
 	}
+
+	if check.GetID() != 123 {
+		t.Fail()
+	}
 }
 
 func TestCreateCheckFail(t *testing.T) {
@@ -96,6 +107,7 @@ func TestCreateCheckFail(t *testing.T) {
 func TestUpdateCheck(t *testing.T) {
 	client := NewClient("testing", "tester")
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
+	check.SetID(123)
 
 	if err != nil {
 		t.Error(err)
@@ -112,6 +124,7 @@ func TestUpdateCheck(t *testing.T) {
 func TestDeleteCheck(t *testing.T) {
 	client := NewClient("testing", "tester")
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
+	check.SetID(123)
 
 	if err != nil {
 		t.Error(err)

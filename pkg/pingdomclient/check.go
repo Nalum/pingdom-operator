@@ -5,12 +5,15 @@ type Check interface {
 	GetType() string
 	getAPI() string
 	SetData(map[string]interface{}) error
+	SetID(int)
+	GetID() int
 }
 
 type check struct {
 	Name string `json:"name"`
 	Host string `json:"host"`
 	Type string `json:"type"`
+	ID   int    `json:"-"`
 	// TODO: implement the below fields
 	// Paused                   bool              `json:"paused,omitempty"`
 	// Resolution               int               `json:"resolution,omitempty"`
@@ -37,4 +40,14 @@ func newCheck(name, host, checkType string) check {
 // GetType returns the type for the Check that will be sent to the Pingdom API
 func (c *check) GetType() string {
 	return c.Type
+}
+
+// GetID returns the ID of the Check in the Pingdom API
+func (c *check) GetID() int {
+	return c.ID
+}
+
+// GetID returns the ID of the Check in the Pingdom API
+func (c *check) SetID(id int) {
+	c.ID = id
 }
