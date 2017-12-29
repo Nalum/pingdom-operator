@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 )
 
@@ -52,17 +51,11 @@ func (c *Client) CreateCheck(check Check) error {
 // UpdateCheck takes a Check struct and updates the matching check in the
 // Pingdom API
 func (c *Client) UpdateCheck(check Check) error {
-	log.Println(c.apiBase + check.getAPI())
 	return nil
 }
 
 // DeleteCheck takes a Check struct and deletes the matching check in the
 // Pingdom API
 func (c *Client) DeleteCheck(check Check) error {
-	log.Println(c.apiBase + check.getAPI())
 	return nil
-}
-
-func (c *Client) setBaseURL(url string) {
-	c.apiBase = url
 }
