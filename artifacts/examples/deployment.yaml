@@ -1,8 +1,11 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
   name: pingdom-operator
 spec:
+  selector:
+    matchLabels:
+      name: pingdom-operator
   replicas: 1
   template:
     metadata:
@@ -11,7 +14,8 @@ spec:
     spec:
       containers:
       - name: pingdom-operator
-        image: quay.io/nalum/pingdom-operator:master
+        image: quay.io/nalum/pingdom-operator
+        imagePullPolicy: IfNotPresent
         args:
         - -pingdom-user=$PINGDOM_USER
         - -pingdom-password=$PINGDOM_PASSWORD

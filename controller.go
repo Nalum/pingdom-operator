@@ -233,9 +233,9 @@ func (c *Controller) syncHandler(key string) error {
 	// If an error occurs during Get/Create, we'll requeue the item so we can
 	// attempt processing again later. This could have been caused by a
 	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
 	// Finally, we update the status block of the HTTPCheck resource to reflect the
 	// current state of the world

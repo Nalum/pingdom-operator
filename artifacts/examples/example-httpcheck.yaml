@@ -1,6 +1,7 @@
-apiVersion: httpchecks.pingdom.mallon.io/v1alpha1
+apiVersion: pingdom.mallon.io/v1alpha1
 kind: HTTPCheck
 metadata:
+  namespace: default
   name: giantswarm.io
 spec:
   name: giantswarm.io-check
