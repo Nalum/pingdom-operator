@@ -10,23 +10,23 @@ type Check interface {
 }
 
 type check struct {
-	Name string `json:"name"`
-	Host string `json:"host"`
-	Type string `json:"type"`
-	ID   int    `json:"-"`
+	Name string `url:"name"`
+	Host string `url:"host"`
+	Type string `url:"type"`
+	ID   int    `url:"-"`
 	// TODO: implement the below fields
-	// Paused                   bool              `json:"paused,omitempty"`
-	// Resolution               int               `json:"resolution,omitempty"`
-	// UserIDs                  []int             `json:"userids,omitempty"`
-	// SendNotificationWhenDown int               `json:"sendnotificationwhendown,omitempty"`
-	// NotifyAgainEvery         int               `json:"notifyagainevery,omitempty"`
-	// NotifyWhenBackUp         bool              `json:"notifywhenbackup,omitempty"`
-	// Tags                     []string          `json:"tags,omitempty"`
-	// ProbeFilters             map[string]string `json:"probe_filters,omitempty"`
-	// IPv6                     bool              `json:"ipv6,omitempty"`
-	// ResponseTimeThreshold    int               `json:"responsetime_threshold,omitempty"`
-	// IntegrationIDs           []int             `json:"integrationids,omitempty"`
-	// TeamIDs                  []int             `json:"teamids,omitempty"`
+	// Paused                   bool              `url:"paused,omitempty"`
+	// Resolution               int               `url:"resolution,omitempty"`
+	// UserIDs                  []int             `url:"userids,omitempty"`
+	// SendNotificationWhenDown int               `url:"sendnotificationwhendown,omitempty"`
+	// NotifyAgainEvery         int               `url:"notifyagainevery,omitempty"`
+	// NotifyWhenBackUp         bool              `url:"notifywhenbackup,omitempty"`
+	// Tags                     []string          `url:"tags,omitempty"`
+	// ProbeFilters             map[string]string `url:"probe_filters,omitempty"`
+	// IPv6                     bool              `url:"ipv6,omitempty"`
+	// ResponseTimeThreshold    int               `url:"responsetime_threshold,omitempty"`
+	// IntegrationIDs           []int             `url:"integrationids,omitempty"`
+	// TeamIDs                  []int             `url:"teamids,omitempty"`
 }
 
 func newCheck(name, host, checkType string) check {

@@ -7,14 +7,14 @@ import (
 
 type httpCheck struct {
 	check
-	URL              string            `json:"url,omitempty"`
-	Encryption       bool              `json:"encryption"`
-	Port             int               `json:"port,omitempty"`
-	Auth             string            `json:"auth,omitempty"`
-	ShouldContain    string            `json:"shouldcontain,omitempty"`
-	ShouldNotContain string            `json:"shouldnotcontain,omitempty"`
-	PostData         string            `json:"postdata,omitempty"`
-	RequestHeader    map[string]string `json:"requestheader,omitempty"`
+	URL              string            `url:"url,omitempty"`
+	Encryption       bool              `url:"encryption"`
+	Port             int               `url:"port,omitempty"`
+	Auth             string            `url:"auth,omitempty"`
+	ShouldContain    string            `url:"shouldcontain,omitempty"`
+	ShouldNotContain string            `url:"shouldnotcontain,omitempty"`
+	PostData         string            `url:"postdata,omitempty"`
+	RequestHeader    map[string]string `url:"requestheader,omitempty"`
 }
 
 // NewHTTPCheck creates a HTTP Check to send to the Pingdom API

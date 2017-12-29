@@ -1,7 +1,6 @@
 package pingdomclient
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -10,6 +9,11 @@ import (
 	"testing"
 
 	"log"
+)
+
+const (
+	username = "testing"
+	password = "testing"
 )
 
 type RewriteTransport struct {
@@ -34,17 +38,26 @@ func TestMain(m *testing.M) {
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s Request received on: %s%s", r.Method, r.Host, r.RequestURI)
 
-		if r.Method != http.MethodDelete {
-			jsonBody := map[string]interface{}{}
-			json.NewDecoder(r.Body).Decode(&jsonBody)
+		if u, p, ok := r.BasicAuth(); ok {
+			if u != username || p != password {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
-			if jsonBody["name"] == "accepted" {
+		if r.Method != http.MethodDelete {
+			checkName := r.URL.Query().Get("name")
+
+			if checkName == "accepted" {
 				w.WriteHeader(http.StatusAccepted)
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
 
-			w.Write([]byte(`{"check": {"id": 123, "name": "` + jsonBody["name"].(string) + `"}}`))
+			w.Write([]byte(`{"check": {"id": 123, "name": "` + checkName + `"}}`))
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
@@ -63,8 +76,29 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
+func TestBadCredentials(t *testing.T) {
+	client := NewClient("user", "pass")
+	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = client.CreateCheck(check)
+
+	if err != nil {
+		if err.Error() != "Unauthorized Access make sure your credentials are correct" {
+			t.Fail()
+			t.Error(err)
+		}
+	} else {
+		t.Fail()
+		t.Error("Expected an error from the CreateCheck call but got nil")
+	}
+}
+
 func TestCreateCheck(t *testing.T) {
-	client := NewClient("testing", "tester")
+	client := NewClient(username, password)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 
 	if err != nil {
@@ -84,7 +118,7 @@ func TestCreateCheck(t *testing.T) {
 }
 
 func TestCreateCheckFail(t *testing.T) {
-	client := NewClient("testing", "tester")
+	client := NewClient(username, password)
 	check, err := NewHTTPCheck("accepted", "https://this.is/a/test")
 
 	if err != nil {
@@ -105,7 +139,7 @@ func TestCreateCheckFail(t *testing.T) {
 }
 
 func TestUpdateCheck(t *testing.T) {
-	client := NewClient("testing", "tester")
+	client := NewClient(username, password)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 	check.SetID(123)
 
@@ -122,7 +156,7 @@ func TestUpdateCheck(t *testing.T) {
 }
 
 func TestDeleteCheck(t *testing.T) {
-	client := NewClient("testing", "tester")
+	client := NewClient(username, password)
 	check, err := NewHTTPCheck("testing", "https://this.is/a/test")
 	check.SetID(123)
 
