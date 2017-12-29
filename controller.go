@@ -256,6 +256,7 @@ func (c *Controller) updateHTTPCheckStatus(check *pingdomV1Alpha1.HTTPCheck) err
 	// Or create a copy manually for better performance
 	checkCopy := check.DeepCopy()
 	checkCopy.Status.PingdomStatus = SuccessSynced
+	checkCopy.Status.PingdomID = 123 // Get PingdomID from the Pingdom API Response data
 	// Until #38113 is merged, we must use Update instead of UpdateStatus to
 	// update the Status block of the HTTPCheck resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring

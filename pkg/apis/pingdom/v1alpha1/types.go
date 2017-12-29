@@ -26,6 +26,7 @@ type HTTPCheckSpec struct {
 // HTTPCheckStatus is the status for a HTTPCheck resource
 type HTTPCheckStatus struct {
 	PingdomStatus string `json:"pingdomStatus"`
+	PingdomID     int    `json:"pingdomID"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
