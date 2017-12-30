@@ -17,8 +17,8 @@ spec:
         image: quay.io/nalum/pingdom-operator
         imagePullPolicy: IfNotPresent
         args:
-        - -pingdom-user=$PINGDOM_USER
-        - -pingdom-password=$PINGDOM_PASSWORD
+        - -pingdom-user=$(PINGDOM_USER)
+        - -pingdom-password=$(PINGDOM_PASSWORD)
         env:
         - name: PINGDOM_USER
           valueFrom:
