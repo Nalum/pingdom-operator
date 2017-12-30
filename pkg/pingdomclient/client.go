@@ -3,6 +3,8 @@ package pingdomclient
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -27,6 +29,49 @@ type Client struct {
 	User    string
 }
 
+// GetCheck takes an ID for a Check and retreives it from the Pingdom API
+func (c *Client) GetCheck(ID int) (Check, error) {
+	req, _ := http.NewRequest(
+		http.MethodGet,
+		pingdomBaseAPI+APIv21Checks+"/"+strconv.Itoa(ID),
+		nil,
+	)
+	req.Header.Add("Content-Type", "application/json")
+	req.SetBasicAuth(c.User, c.Pass)
+	req.Header.Add("App-Key", c.appKey)
+	resp, _ := http.DefaultClient.Do(req)
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("Unable to get HTTP Check with ID " + strconv.Itoa(ID) + " - " + resp.Status)
+	}
+
+	var checkResp pingdomCheck
+	json.NewDecoder(resp.Body).Decode(&checkResp)
+	var endpoint string
+
+	if checkResp.Check.Type.HTTP.Encryption {
+		endpoint = "https://"
+	} else {
+		endpoint = "http://"
+	}
+
+	endpoint = endpoint + checkResp.Check.HostName
+
+	if checkResp.Check.Type.HTTP.Port > 0 {
+		endpoint = endpoint + ":" + strconv.Itoa(checkResp.Check.Type.HTTP.Port)
+	}
+
+	endpoint = endpoint + checkResp.Check.Type.HTTP.URL
+
+	check, err := NewHTTPCheck(checkResp.Check.Name, endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return check, nil
+}
+
 // CreateCheck takes a Check struct and creates a new check against the
 // Pingdom API
 func (c *Client) CreateCheck(check Check) error {
@@ -38,7 +83,7 @@ func (c *Client) CreateCheck(check Check) error {
 	)
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(c.User, c.Pass)
-	req.Header.Add("App-Key", pingdomAppKey)
+	req.Header.Add("App-Key", c.appKey)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -48,6 +93,9 @@ func (c *Client) CreateCheck(check Check) error {
 	if resp.StatusCode == http.StatusUnauthorized {
 		return errors.New("Unauthorized Access make sure your credentials are correct")
 	} else if resp.StatusCode != http.StatusOK {
+		rsp, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Status: %s", resp.Status)
+		log.Printf("Response: %s", rsp)
 		return errors.New("Unable to create the check against the Pingdom API")
 	}
 
@@ -71,6 +119,7 @@ func (c *Client) CreateCheck(check Check) error {
 // Pingdom API
 func (c *Client) UpdateCheck(check Check) error {
 	checkQuery, _ := query.Values(check)
+	checkQuery.Del("type")
 	req, _ := http.NewRequest(
 		http.MethodPut,
 		c.apiBase+check.getAPI()+"/"+strconv.Itoa(check.GetID())+"?"+checkQuery.Encode(),
@@ -78,7 +127,7 @@ func (c *Client) UpdateCheck(check Check) error {
 	)
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(c.User, c.Pass)
-	req.Header.Add("App-Key", pingdomAppKey)
+	req.Header.Add("App-Key", c.appKey)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -86,6 +135,9 @@ func (c *Client) UpdateCheck(check Check) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		rsp, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Status: %s", resp.Status)
+		log.Printf("Response: %s", rsp)
 		return errors.New("Unable to update the check against the Pingdom API")
 	}
 
@@ -102,7 +154,7 @@ func (c *Client) DeleteCheck(check Check) error {
 	)
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(c.User, c.Pass)
-	req.Header.Add("App-Key", pingdomAppKey)
+	req.Header.Add("App-Key", c.appKey)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -110,7 +162,10 @@ func (c *Client) DeleteCheck(check Check) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("Unable to create the check against the Pingdom API")
+		rsp, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Status: %s", resp.Status)
+		log.Printf("Response: %s", rsp)
+		return errors.New("Unable to delete the check against the Pingdom API")
 	}
 
 	return nil

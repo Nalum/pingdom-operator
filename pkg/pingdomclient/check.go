@@ -7,6 +7,7 @@ type Check interface {
 	SetData(map[string]interface{}) error
 	SetID(int)
 	GetID() int
+	Compare(Check) bool
 }
 
 type check struct {
