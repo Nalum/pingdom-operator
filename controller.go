@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang/glog"
@@ -237,18 +238,42 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	pCheck.SetID(check.Status.PingdomID)
+
 	if check.Status.PingdomID != 0 {
-		pCheck.SetID(check.Status.PingdomID)
+		oCheck, err := c.pingdomAPIClient.GetCheck(check.Status.PingdomID)
+
+		// If an error occurs during Get, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
+
+		oCheck.SetID(check.Status.PingdomID)
+
+		if pCheck.Compare(oCheck) {
+			c.recorder.Event(check, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+			return nil
+		}
+
 		err = c.pingdomAPIClient.UpdateCheck(pCheck)
+
+		// If an error occurs during Update, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
 	} else {
 		err = c.pingdomAPIClient.CreateCheck(pCheck)
-	}
 
-	// If an error occurs during Get/Create, we'll requeue the item so we can
-	// attempt processing again later. This could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
+		// If an error occurs during Create, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
 	}
 
 	// Finally, we update the status block of the HTTPCheck resource to reflect the
@@ -297,7 +322,8 @@ func (c *Controller) enqueueHTTPCheck(obj interface{}) {
 // string which is then put onto the work queue. This method should *not* be
 // passed resources of any type other than HTTPCheck.
 func (c *Controller) deleteHTTPCheck(obj interface{}) {
-	if httpCheck, ok := obj.(pingdomV1Alpha1.HTTPCheck); ok {
+	log.Printf("Deleteing: %#v", obj)
+	if httpCheck, ok := obj.(*pingdomV1Alpha1.HTTPCheck); ok {
 		check, err := pingdomclient.NewHTTPCheck(httpCheck.Spec.Name, httpCheck.Spec.URL)
 
 		if err != nil {
@@ -307,5 +333,7 @@ func (c *Controller) deleteHTTPCheck(obj interface{}) {
 
 		check.SetID(httpCheck.Status.PingdomID)
 		c.pingdomAPIClient.DeleteCheck(check)
+	} else {
+		log.Println("There was an issue type checking the Object")
 	}
 }
