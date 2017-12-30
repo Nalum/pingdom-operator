@@ -16,6 +16,36 @@ const (
 	password = "testing"
 )
 
+var exampleResponse = `{
+  "check": {
+    "id": 123,
+    "name": "testing",
+    "resolution": 5,
+    "sendnotificationwhendown": 2,
+    "notifyagainevery": 0,
+    "notifywhenbackup": true,
+    "created": 1514642336,
+    "type": {
+      "http": {
+        "url": "/a/test",
+        "encryption": true,
+        "port": 443,
+        "requestheaders": {
+          "User-Agent": "Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)"
+        }
+      }
+    },
+    "hostname": "this.is",
+    "ipv6": false,
+    "integrationids": [],
+    "lasttesttime": 1514646668,
+    "lastresponsetime": 712,
+    "status": "up",
+    "tags": [],
+    "probe_filters": []
+  }
+}`
+
 type RewriteTransport struct {
 	Transport http.RoundTripper
 	URL       *url.URL
@@ -57,9 +87,10 @@ func TestMain(m *testing.M) {
 				w.WriteHeader(http.StatusOK)
 			}
 
-			w.Write([]byte(`{"check": {"id": 123, "name": "` + checkName + `"}}`))
+			w.Write([]byte(exampleResponse))
 		} else {
 			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(exampleResponse))
 		}
 	}))
 	defer httpServer.Close()
@@ -169,5 +200,27 @@ func TestDeleteCheck(t *testing.T) {
 	if err != nil {
 		t.Fail()
 		t.Error(err)
+	}
+}
+
+func TestGetCheck(t *testing.T) {
+	client := NewClient(username, password)
+	check1, err := NewHTTPCheck("testing", "https://this.is/a/test")
+	check1.SetID(123)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	check2, err := client.GetCheck(123)
+
+	if err != nil {
+		t.Fail()
+		t.Error(err)
+	}
+
+	if !check1.Compare(check2) {
+		t.Fail()
+		t.Errorf("Got: %+v\n\nExpected: %+v", check2, check1)
 	}
 }

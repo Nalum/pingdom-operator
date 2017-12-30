@@ -3,8 +3,6 @@ package pingdomclient
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -69,6 +67,7 @@ func (c *Client) GetCheck(ID int) (Check, error) {
 		return nil, err
 	}
 
+	check.SetID(ID)
 	return check, nil
 }
 
@@ -93,9 +92,6 @@ func (c *Client) CreateCheck(check Check) error {
 	if resp.StatusCode == http.StatusUnauthorized {
 		return errors.New("Unauthorized Access make sure your credentials are correct")
 	} else if resp.StatusCode != http.StatusOK {
-		rsp, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Status: %s", resp.Status)
-		log.Printf("Response: %s", rsp)
 		return errors.New("Unable to create the check against the Pingdom API")
 	}
 
@@ -135,9 +131,6 @@ func (c *Client) UpdateCheck(check Check) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		rsp, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Status: %s", resp.Status)
-		log.Printf("Response: %s", rsp)
 		return errors.New("Unable to update the check against the Pingdom API")
 	}
 
@@ -162,9 +155,6 @@ func (c *Client) DeleteCheck(check Check) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		rsp, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Status: %s", resp.Status)
-		log.Printf("Response: %s", rsp)
 		return errors.New("Unable to delete the check against the Pingdom API")
 	}
 

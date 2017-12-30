@@ -250,8 +250,6 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 
-		oCheck.SetID(check.Status.PingdomID)
-
 		if pCheck.Compare(oCheck) {
 			c.recorder.Event(check, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 			return nil
