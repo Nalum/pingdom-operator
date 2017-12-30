@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -63,7 +62,7 @@ type Controller struct {
 	recorder record.EventRecorder
 	// pingdomAPIClient is a client that will manage checks in the Pingdom API based
 	// on the CRDs on the Kubernetes cluster
-	pingdomAPIClient pingdomclient.Client
+	pingdomAPIClient *pingdomclient.Client
 }
 
 // NewController returns a new sample controller
@@ -94,6 +93,7 @@ func NewController(
 		pingdomsSynced:   pingdomInformer.Informer().HasSynced,
 		workqueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Pingdom Resources"),
 		recorder:         recorder,
+		pingdomAPIClient: pingdomAPIClient,
 	}
 
 	glog.Info("Setting up event handlers")
@@ -102,6 +102,9 @@ func NewController(
 		AddFunc: controller.enqueueHTTPCheck,
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueHTTPCheck(new)
+		},
+		DeleteFunc: func(obj interface{}) {
+			controller.deleteHTTPCheck(obj)
 		},
 	})
 
@@ -228,18 +231,29 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// TODO: implement Pingdom client to sync with Pingdom API
+	pCheck, err := pingdomclient.NewHTTPCheck(check.Spec.Name, check.Spec.URL)
+
+	if err != nil {
+		return err
+	}
+
+	if check.Status.PingdomID != 0 {
+		pCheck.SetID(check.Status.PingdomID)
+		err = c.pingdomAPIClient.UpdateCheck(pCheck)
+	} else {
+		err = c.pingdomAPIClient.CreateCheck(pCheck)
+	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
 	// attempt processing again later. This could have been caused by a
 	// temporary network failure, or any other transient reason.
-	// if err != nil {
-	// 	return err
-	// }
+	if err != nil {
+		return err
+	}
 
 	// Finally, we update the status block of the HTTPCheck resource to reflect the
 	// current state of the world
-	err = c.updateHTTPCheckStatus(check)
+	err = c.updateHTTPCheckStatus(check, pCheck.GetID())
 
 	if err != nil {
 		return err
@@ -249,14 +263,13 @@ func (c *Controller) syncHandler(key string) error {
 	return nil
 }
 
-// TODO: Add second param based on response from Pingdom API
-func (c *Controller) updateHTTPCheckStatus(check *pingdomV1Alpha1.HTTPCheck) error {
+func (c *Controller) updateHTTPCheckStatus(check *pingdomV1Alpha1.HTTPCheck, checkID int) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	checkCopy := check.DeepCopy()
 	checkCopy.Status.PingdomStatus = SuccessSynced
-	checkCopy.Status.PingdomID = 123 // Get PingdomID from the Pingdom API Response data
+	checkCopy.Status.PingdomID = checkID
 	// Until #38113 is merged, we must use Update instead of UpdateStatus to
 	// update the Status block of the HTTPCheck resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
@@ -280,50 +293,19 @@ func (c *Controller) enqueueHTTPCheck(obj interface{}) {
 	c.workqueue.AddRateLimited(key)
 }
 
-// handleObject will take any resource implementing metav1.Object and attempt
-// to find the HTTPCheck resource that 'owns' it. It does this by looking at the
-// objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that HTTPCheck resource to be processed. If the object does not
-// have an appropriate OwnerReference, it will simply be skipped.
-func (c *Controller) handleObject(obj interface{}) {
-	var object metav1.Object
-	var ok bool
-
-	if object, ok = obj.(metav1.Object); !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-
-		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object, invalid type"))
-			return
-		}
-
-		object, ok = tombstone.Obj.(metav1.Object)
-
-		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
-			return
-		}
-
-		glog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
-	}
-
-	glog.V(4).Infof("Processing object: %s", object.GetName())
-
-	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a HTTPCheck, we should not do anything more
-		// with it.
-		if ownerRef.Kind != "HTTPCheck" {
-			return
-		}
-
-		check, err := c.pingdomLister.HTTPChecks(object.GetNamespace()).Get(ownerRef.Name)
+// deleteHTTPCheck takes a HTTPCheck resource and converts it into a namespace/name
+// string which is then put onto the work queue. This method should *not* be
+// passed resources of any type other than HTTPCheck.
+func (c *Controller) deleteHTTPCheck(obj interface{}) {
+	if httpCheck, ok := obj.(pingdomV1Alpha1.HTTPCheck); ok {
+		check, err := pingdomclient.NewHTTPCheck(httpCheck.Spec.Name, httpCheck.Spec.URL)
 
 		if err != nil {
-			glog.V(4).Infof("ignoring orphaned object '%s' of check '%s'", object.GetSelfLink(), ownerRef.Name)
+			runtime.HandleError(err)
 			return
 		}
 
-		c.enqueueHTTPCheck(check)
-		return
+		check.SetID(httpCheck.Status.PingdomID)
+		c.pingdomAPIClient.DeleteCheck(check)
 	}
 }
